@@ -1,0 +1,6 @@
+Timestamp,Start Point,End Point,Optimal Route,Number of Steps
+2025-06-26 17:19:02,C,D,C -> G -> H -> D,4
+2025-06-26 17:23:52,A,F,A -> B -> F,3
+2025-06-26 17:23:52,F,G,F -> B -> C -> G,4
+2025-06-26 17:23:52,A,G,A -> B -> F -> B -> C -> G,6
+2025-06-26 17:27:48,A,B,A -> B,2

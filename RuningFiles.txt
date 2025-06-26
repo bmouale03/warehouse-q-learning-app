@@ -1,0 +1,4 @@
+1.Installer Streamlit si ce n'est pas encore fait :pip install streamlit
+2. Installer les bibliothèques nécessaires :pip install networkx matplotlib
+3. Lance l'application depuis le terminal :streamlit run warehouse_q_learning_app.py
+

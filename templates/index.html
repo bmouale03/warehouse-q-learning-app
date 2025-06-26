@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Optimisation d'entrepôt</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Optimisation des flux d'entrepôt</h1>
+        <form action="/optimize" method="post">
+            <div class="form-group">
+                <label for="start">Point de départ (A-L):</label>
+                <input type="text" id="start" name="start" required pattern="[A-La-l]">
+            </div>
+            
+            <div class="form-group">
+                <label for="end">Point d'arrivée (A-L):</label>
+                <input type="text" id="end" name="end" required pattern="[A-La-l]">
+            </div>
+            
+            <div class="form-group">
+                <label for="intermediary">Point intermédiaire (optionnel):</label>
+                <input type="text" id="intermediary" name="intermediary" pattern="[A-La-l]">
+            </div>
+            
+            <button type="submit">Optimiser la route</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Résultats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Résultat de l'optimisation</h1>
+        
+        <div class="result-box">
+            <h2>Route {{ route_type }}</h2>
+            <p>De <strong>{{ start }}</strong> à <strong>{{ end }}</strong>
+            {% if intermediary %}
+                via <strong>{{ intermediary }}</strong>
+            {% endif %}
+            </p>
+            
+            <div class="path">
+                {{ path_str }}
+            </div>
+            
+            <div class="steps">
+                <p>Nombre d'étapes: {{ path|length }}</p>
+            </div>
+        </div>
+        
+        <a href="{{ url_for('download') }}" class="download-btn">Télécharger l'historique</a>
+        <a href="{{ url_for('home') }}" class="back-btn">Nouvelle optimisation</a>
+    </div>
+</body>
+</html>
