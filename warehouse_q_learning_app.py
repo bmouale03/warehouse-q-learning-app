@@ -5,6 +5,7 @@ from datetime import datetime
 import networkx as nx
 import matplotlib.pyplot as plt
 import io
+import time
 
 # Paramètres Q-learning
 gamma = 0.75
@@ -117,7 +118,49 @@ def draw_route_graph(route):
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
     buf.seek(0)
+    plt.close(fig)
     return buf
+
+# ======== NOUVEAU : Fonction d’animation ==========
+def animate_route(route, speed=0.8):
+    G = nx.Graph()
+    edges = [
+        ('A', 'B'), ('B', 'C'), ('B', 'F'), ('C', 'G'),
+        ('F', 'J'), ('G', 'H'), ('H', 'D'), ('H', 'L'),
+        ('J', 'I'), ('J', 'K'), ('K', 'L'), ('I', 'E'),
+    ]
+    G.add_edges_from(edges)
+    pos = nx.spring_layout(G, seed=42)
+
+    progress_bar = st.progress(0)
+    img_placeholder = st.empty()
+
+    for i in range(1, len(route)+1):
+        current_route = route[:i]
+
+        node_colors = ['green' if node == route[0] else
+                       'red' if node == route[-1] else
+                       'orange' if node in current_route else 'lightgray'
+                       for node in G.nodes()]
+
+        route_edges = set(zip(current_route, current_route[1:])) | set(zip(current_route[1:], current_route))
+        edge_colors = ['blue' if edge in route_edges else 'gray' for edge in G.edges()]
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_color=edge_colors,
+                node_size=800, width=2, font_weight='bold')
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png")
+        buf.seek(0)
+        plt.close(fig)
+
+        img_placeholder.image(buf)
+        progress_bar.progress(i / len(route))
+
+        time.sleep(speed)
+
+    progress_bar.empty()
+# ================================================
 
 # Interface Streamlit
 st.set_page_config(page_title="Optimisation Entrepôt", layout="centered")
@@ -134,6 +177,12 @@ time_per_step = st.slider("Temps estimé pour parcourir une étape (en secondes)
 robot_speed = st.slider("Vitesse du robot (en mètres/seconde)", min_value=0.5, max_value=5.0, value=1.0, step=0.1)
 distance_per_step = 10  # en mètres
 
+# Nouvelle sélection de vitesse animation
+animation_speed = st.slider("Vitesse de l’animation (secondes par étape)", 0.1, 3.0, 0.8, 0.1)
+
+# Variables pour stocker la route calculée
+route_result = []
+
 if option == "Route directe":
     col1, col2 = st.columns(2)
     with col1:
@@ -143,21 +192,21 @@ if option == "Route directe":
 
     if st.button("Trouver la route optimale"):
         if start != end:
-            result = route(start, end)
-            st.success(f" Route optimale : {' -> '.join(result)}")
+            route_result = route(start, end)
+            st.success(f" Route optimale : {' -> '.join(route_result)}")
             st.info(f"Résultat enregistré dans `optimal_routes.csv`")
 
-            minutes, seconds, total = calculate_travel_time(result, time_per_step)
+            minutes, seconds, total = calculate_travel_time(route_result, time_per_step)
             st.info(f"Temps estimé de parcours : {minutes} min {seconds} s ({total} secondes)")
 
-            total_distance = (len(result) - 1) * distance_per_step
+            total_distance = (len(route_result) - 1) * distance_per_step
             time_by_speed = total_distance / robot_speed
             mins_speed = int(time_by_speed) // 60
             secs_speed = int(time_by_speed) % 60
-            st.info(f"🚗 Temps estimé à {robot_speed} m/s : {mins_speed} min {secs_speed} s pour {total_distance} m")
+            st.info(f"Temps estimé à {robot_speed} m/s : {mins_speed} min {secs_speed} s pour {total_distance} m")
 
             st.subheader("Visualisation du graphe")
-            img_buf = draw_route_graph(result)
+            img_buf = draw_route_graph(route_result)
             st.image(img_buf)
         else:
             st.warning("Le point de départ et d’arrivée doivent être différents.")
@@ -173,24 +222,58 @@ elif option == "Route avec étape intermédiaire":
 
     if st.button("Trouver la meilleure route avec étape"):
         if len({start, mid, end}) == 3:
-            result = best_route(start, end, mid)
-            st.success(f" Meilleure route via {mid} : {' -> '.join(result)}")
+            route_result = best_route(start, end, mid)
+            st.success(f" Meilleure route via {mid} : {' -> '.join(route_result)}")
             st.info(f"Résultat enregistré dans `optimal_routes.csv`")
 
-            minutes, seconds, total = calculate_travel_time(result, time_per_step)
+            minutes, seconds, total = calculate_travel_time(route_result, time_per_step)
             st.info(f"Temps estimé de parcours : {minutes} min {seconds} s ({total} secondes)")
 
-            total_distance = (len(result) - 1) * distance_per_step
+            total_distance = (len(route_result) - 1) * distance_per_step
             time_by_speed = total_distance / robot_speed
             mins_speed = int(time_by_speed) // 60
             secs_speed = int(time_by_speed) % 60
             st.info(f"Temps estimé à {robot_speed} m/s : {mins_speed} min {secs_speed} s pour {total_distance} m")
 
             st.subheader(" Visualisation du graphe")
-            img_buf = draw_route_graph(result)
+            img_buf = draw_route_graph(route_result)
             st.image(img_buf)
         else:
             st.warning("Les trois points doivent être différents.")
+
+# ======== NOUVEAU : Bouton pour lancer l'animation ==========
+if route_result:
+    st.markdown("---")
+    st.subheader("Animation de la route")
+
+    if st.button("Lancer l’animation"):
+        animate_route(route_result, speed=animation_speed)
+# ============================================================
+
+if st.checkbox("Afficher la photo de l’environnement d’étude"):
+    st.image("photo-entrepot.png", caption="Photo de l’environnement d’étude", use_column_width=True)
+
+    st.markdown("""
+    <style>
+    .zoom-container {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 1em;
+    }
+    .zoom-container img {
+        transition: transform 0.3s ease;
+        max-width: 90%;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .zoom-container img:hover {
+        transform: scale(1.5);
+        z-index: 100;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<p style='font-style: italic; text-align: center;'>Survolez pour zoomer</p>", unsafe_allow_html=True)
 
 st.markdown("---")
 st.caption("© 2025 - IA réalisée par Dr MOUALE")
